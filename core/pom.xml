@@ -5,26 +5,36 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.example</groupId>
-    <artifactId>client</artifactId>
+    <artifactId>netty-protostuff-core</artifactId>
     <version>1.0-SNAPSHOT</version>
-
 
     <properties>
         <java.version>1.8</java.version>
+        <javassist.version>3.27.0-GA</javassist.version>
         <protostuff.version>1.6.0</protostuff.version>
+        <netty.version>5.0.0.Alpha2</netty.version>
     </properties>
-
 
     <dependencies>
         <dependency>
-            <groupId>com.example</groupId>
-            <artifactId>netty-protostuff-api</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <groupId>io.protostuff</groupId>
+            <artifactId>protostuff-core</artifactId>
+            <version>${protostuff.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>io.protostuff</groupId>
+            <artifactId>protostuff-runtime</artifactId>
+            <version>${protostuff.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId>
+            <version>${netty.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
+        <finalName>netty-protostuff-core</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

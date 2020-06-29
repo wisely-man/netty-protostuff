@@ -2,29 +2,22 @@ package com.example.server.handler;
 
 import com.example.core.Invoke;
 import com.example.core.MethodParams;
+import com.example.core.util.ProtostuffUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.protostuff.LinkedBuffer;
-import io.protostuff.ProtobufIOUtil;
-import io.protostuff.Schema;
-import io.protostuff.runtime.RuntimeSchema;
 
 @ChannelHandler.Sharable
 public class MyServerHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
-
     private Invoke<byte[]> invoke = new InvokeImpl();
-
 
     protected void messageReceived(ChannelHandlerContext ctx, ByteBuf o) {
         ByteBuf protobuf = o.readBytes(o.readableBytes());
         o.writeBytes(protobuf);
-        Schema<MethodParams> schema = RuntimeSchema.getSchema(MethodParams.class);
-        MethodParams methodParams = schema.newMessage();
-        ProtobufIOUtil.mergeFrom(protobuf.array(), methodParams, schema);
+        MethodParams methodParams = ProtostuffUtils.deserializer(protobuf.array(), MethodParams.class);
         System.out.println(methodParams);
 
         try {

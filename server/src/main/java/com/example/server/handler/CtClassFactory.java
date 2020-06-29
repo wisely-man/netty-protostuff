@@ -1,6 +1,6 @@
 package com.example.server.handler;
 
-import com.example.annotation.RpcService;
+import com.example.core.annotation.RpcService;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.support.ResourcePatternResolver;

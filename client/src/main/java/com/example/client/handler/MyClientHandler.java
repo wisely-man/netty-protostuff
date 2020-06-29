@@ -1,16 +1,13 @@
 package com.example.client.handler;
 
 import com.example.core.MethodParams;
+import com.example.core.util.ProtostuffUtils;
 import com.example.entity.Person;
 import com.example.service.PersonService;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.protostuff.LinkedBuffer;
-import io.protostuff.ProtobufIOUtil;
-import io.protostuff.Schema;
-import io.protostuff.runtime.RuntimeSchema;
 
 public class MyClientHandler extends SimpleChannelInboundHandler {
 
@@ -29,9 +26,7 @@ public class MyClientHandler extends SimpleChannelInboundHandler {
         methodParams.setMethodName("update");
         methodParams.setParams(new Person(4, "李四", 30));
 
-        LinkedBuffer buffer = LinkedBuffer.allocate();
-        Schema<MethodParams> schema = RuntimeSchema.getSchema(MethodParams.class);
-        byte[] protobuf = ProtobufIOUtil.toByteArray(methodParams, schema, buffer);
+        byte[] protobuf = ProtostuffUtils.serializer(methodParams);
         ctx.writeAndFlush(Unpooled.copiedBuffer(protobuf));
     }
 
@@ -41,9 +36,8 @@ public class MyClientHandler extends SimpleChannelInboundHandler {
         ByteBuf o = (ByteBuf) msg;
         ByteBuf protobuf = o.readBytes(o.readableBytes());
         o.writeBytes(protobuf);
-        Schema<Person> schema = RuntimeSchema.getSchema(Person.class);
-        Person person = schema.newMessage();
-        ProtobufIOUtil.mergeFrom(protobuf.array(), person, schema);
+
+        Person person = ProtostuffUtils.deserializer(protobuf.array(), Person.class);
         System.out.println(person);
     }
 
