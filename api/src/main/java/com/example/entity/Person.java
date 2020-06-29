@@ -5,18 +5,29 @@ public class Person {
     public Person() {
     }
 
-    public Person(String name, Integer age) {
+    public Person(Integer id, String name, Integer age) {
+        this.id = id;
         this.name = name;
         this.age = age;
     }
 
     @Override
     public String toString() {
-        return "Person:{name:" + this.name + ", age:" + this.age + "}";
+        return "Person:{id:" + this.id + ", name:" + this.name + ", age:" + this.age + "}";
     }
 
+    private Integer id;
     private String name;
     private Integer age;
+
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
 
     public String getName() {
         return name;
