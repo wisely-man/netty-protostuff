@@ -20,9 +20,15 @@ public class MyClientHandler extends SimpleChannelInboundHandler {
         MethodParams methodParams = new MethodParams();
         methodParams.setServiceId(1);
         methodParams.setServiceClazz(PersonService.class);
-        methodParams.setMethodName("load");
-        methodParams.setParams(2);
-        methodParams.setReturnClazz(Person.class);
+
+        // 查询
+//        methodParams.setMethodName("load");
+//        methodParams.setParams(2);
+
+        // 更新
+        methodParams.setMethodName("update");
+        methodParams.setParams(new Person(4, "李四", 30));
+
         LinkedBuffer buffer = LinkedBuffer.allocate();
         Schema<MethodParams> schema = RuntimeSchema.getSchema(MethodParams.class);
         byte[] protobuf = ProtobufIOUtil.toByteArray(methodParams, schema, buffer);
@@ -31,6 +37,7 @@ public class MyClientHandler extends SimpleChannelInboundHandler {
 
     @Override
     protected void messageReceived(ChannelHandlerContext ctx, Object msg) throws Exception {
+        // 解析数据
         ByteBuf o = (ByteBuf) msg;
         ByteBuf protobuf = o.readBytes(o.readableBytes());
         o.writeBytes(protobuf);
