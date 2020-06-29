@@ -17,6 +17,10 @@ public class PersonServiceImpl implements PersonService {
 
     @Override
     public Person load(Integer id) {
+        Map<Integer, Person> map = new HashMap<>();
+        map.put(1, new Person(1, "春花", 18));
+        map.put(2, new Person(2, "张三", 20));
+        map.put(3, new Person(3, "李四", 25));
         return map.get(id);
     }
 
