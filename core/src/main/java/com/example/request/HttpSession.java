@@ -1,9 +1,6 @@
-package com.example.core.request;
+package com.example.request;
 
 import com.wisely.core.helper.Model;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class HttpSession {
 

@@ -1,6 +1,6 @@
-package com.example.core.util;
+package com.example.util;
 
-import com.example.core.request.HttpSession;
+import com.example.request.HttpSession;
 import com.wisely.core.helper.RandomHelper;
 
 import java.util.concurrent.ConcurrentHashMap;

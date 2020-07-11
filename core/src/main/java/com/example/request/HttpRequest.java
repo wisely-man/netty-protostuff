@@ -1,4 +1,4 @@
-package com.example.core.request;
+package com.example.request;
 
 public class HttpRequest {
 

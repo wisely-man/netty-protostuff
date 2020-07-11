@@ -2,7 +2,7 @@ package com.example.server.handler;
 
 import com.example.core.Invoke;
 import com.example.core.MethodParams;
-import com.example.core.util.ProtostuffUtils;
+import com.example.util.ProtostuffUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;

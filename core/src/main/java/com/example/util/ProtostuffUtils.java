@@ -1,4 +1,4 @@
-package com.example.core.util;
+package com.example.util;
 
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtostuffIOUtil;

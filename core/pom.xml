@@ -14,9 +14,21 @@
         <javassist.version>3.27.0-GA</javassist.version>
         <protostuff.version>1.6.0</protostuff.version>
         <netty.version>5.0.0.Alpha2</netty.version>
+        <commons.lang3.version>3.10</commons.lang3.version>
+        <commons.pool2.version>2.3</commons.pool2.version>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-pool2</artifactId>
+            <version>${commons.pool2.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${commons.lang3.version}</version>
+        </dependency>
         <dependency>
             <groupId>com.wisely</groupId>
             <artifactId>core-base</artifactId>

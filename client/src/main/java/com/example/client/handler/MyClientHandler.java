@@ -1,7 +1,7 @@
 package com.example.client.handler;
 
 import com.example.core.MethodParams;
-import com.example.core.util.ProtostuffUtils;
+import com.example.util.ProtostuffUtils;
 import com.example.entity.Person;
 import com.example.service.PersonService;
 import io.netty.buffer.ByteBuf;
