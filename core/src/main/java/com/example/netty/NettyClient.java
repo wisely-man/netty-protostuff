@@ -8,11 +8,17 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.AsciiString;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.util.concurrent.DefaultPromise;
+import io.netty.util.concurrent.Promise;
 
 import java.io.UnsupportedEncodingException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 
 public class NettyClient {
 
@@ -81,15 +87,6 @@ public class NettyClient {
     // static Method ======================================================================
 
     /**
-     * 返回NettyClient实例
-     * @param config
-     * @return
-     */
-    static NettyClient newInstance(final NettyClientConfig config) {
-        return new NettyClient(config);
-    }
-
-    /**
      * 获取NettyClient
      * @param url
      * @param handlers
@@ -121,10 +118,22 @@ public class NettyClient {
      * @param handlers
      * @return
      */
-    static NettyClient newInstance(
-            final String url, final ChannelHandler...handlers) {
+    static NettyClient newInstance(final String url, final ChannelHandler...handlers) {
         return new NettyClient(new NettyClientConfig(url, handlers));
     }
+
+
+    /**
+     * 返回NettyClient实例
+     * @param config
+     * @return
+     */
+    static NettyClient newInstance(final NettyClientConfig config) {
+        return new NettyClient(config);
+    }
+
+
+
 
 
 
@@ -137,7 +146,8 @@ public class NettyClient {
         new HttpClientCodec(), // 编解码器
         new HttpObjectAggregator(1024 * 10 * 1024), // 聚合
         new HttpContentDecompressor(), // 解压
-        new ChunkedWriteHandler() // 大数据六
+        new ChunkedWriteHandler(), // 大数据
+        new NettyClientHandler() // 自定义处理类
     };
 
     public static byte[] doHttpRequest(String url, Model header, String message){
@@ -168,21 +178,49 @@ public class NettyClient {
         }
 
         DefaultFullHttpRequest req =
-                new DefaultFullHttpRequest(httpVersion, method,
-                    client.config.getUri().toASCIIString(), byteBuf);
+                        new DefaultFullHttpRequest(httpVersion, method,
+                            client.config.getUri().toASCIIString(), byteBuf);
 
-        req.headers().set(HttpHeaderNames.HOST, client.config.getHost());
-        req.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
-        req.headers().set(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(req.content().readableBytes()));
+        // 设置请求头
+        req.headers()
+            .set(HttpHeaderNames.HOST, client.config.getHost())
+            .set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE)
+            .set(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(req.content().readableBytes()));
 
-//        if(!header.isEmpty()){
-//            HttpHeaderNames.COOKIE
-//            for(){
-//
-//            }
-//        }
+        if(!header.isEmpty()){
+            for(Object key : header.keySet()){
+                if(key instanceof AsciiString){
+                    req.headers().set((AsciiString) key, header.getString(key));
+                }
+            }
+        }
 
-        return null;
+        byte[] result = null;
+        AtomicReference<Throwable> throwable = null;
+        final CountDownLatch latch = new CountDownLatch(1);
+        try {
+
+            Promise<byte[]> promise = new DefaultPromise<>(new DefaultEventLoop());
+
+            // 发送请求并添加监听，等待请求完成
+            client.channel.pipeline().get(NettyClientHandler.class).setPromise(promise);
+            client.channel.writeAndFlush(req).addListener(future -> {
+                if(future.isDone()){
+                    latch.countDown();
+                }
+            });
+            // 阻塞等待异步结果
+            latch.await();
+
+            result = promise.get();
+
+        } catch (Throwable e) {
+            throw new SystemException("do request failed...", e);
+        } finally {
+            latch.countDown();
+        }
+
+        return result;
     }
 
 
