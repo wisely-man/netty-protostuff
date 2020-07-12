@@ -1,5 +1,6 @@
 package com.example.core;
 
+import com.example.netty.NettyClient;
 import com.example.util.ProtostuffUtils;
 
 import java.lang.reflect.InvocationHandler;
@@ -25,7 +26,7 @@ public class ProxyHandler<T> implements InvocationHandler {
         request.setParams(args);
 
         byte[] protobuf = ProtostuffUtils.serializer(request);
-
+        byte[] result = NettyClient.doHttpRequest("http://localhost:8080", null, new String(protobuf));
 
         return null;
     }

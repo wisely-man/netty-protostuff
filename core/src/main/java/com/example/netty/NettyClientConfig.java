@@ -52,6 +52,9 @@ public class NettyClientConfig {
     }
 
     public Integer getPort(){
+        if(uri.getPort() == -1){
+            return isSsl() ? 443 : 80;
+        }
         return uri.getPort();
     }
 

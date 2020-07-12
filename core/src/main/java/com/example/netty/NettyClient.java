@@ -195,8 +195,7 @@ public class NettyClient {
             }
         }
 
-        byte[] result = null;
-        AtomicReference<Throwable> throwable = null;
+        byte[] result;
         final CountDownLatch latch = new CountDownLatch(1);
         try {
 
