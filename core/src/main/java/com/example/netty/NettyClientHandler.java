@@ -17,11 +17,14 @@ public class NettyClientHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
     @Override
     protected void messageReceived(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
+        System.out.println("message received");
         this.promise.setSuccess(msg.readBytes(msg.readableBytes()).array());
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        System.out.println("exceptionCaught");
+        cause.printStackTrace();
         this.promise.setFailure(cause);
     }
 }

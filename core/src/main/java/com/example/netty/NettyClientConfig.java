@@ -63,7 +63,7 @@ public class NettyClientConfig {
     }
 
     public Boolean isSsl(){
-        return StringUtils.equals(this.getUri().getScheme(), "https://");
+        return StringUtils.equals(this.getUri().getScheme(), "https");
     }
 
 

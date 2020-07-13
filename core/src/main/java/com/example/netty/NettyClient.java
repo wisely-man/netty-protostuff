@@ -7,34 +7,37 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.AsciiString;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.stream.ChunkedWriteHandler;
-import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.Promise;
 
 import java.io.UnsupportedEncodingException;
-import java.util.concurrent.CountDownLatch;
+import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.atomic.AtomicReferenceArray;
 
 public class NettyClient {
 
     final static EventLoopGroup WORKER_GROUP = new NioEventLoopGroup();
-    final static Long CONNECT_TIME_OUT_SECOND = 90 * 1000l;
+    final static DefaultEventLoop NETTY_RESPONSE_PROMISE_NOTIFY_EVENT_LOOP =  new DefaultEventLoop();
+    public final static String NETTY_CONNECTION_TIME_OUT = "NETTY_CONNECTION_TIME_OUT";
+    final static Long DEFAULT_CONNECT_TIME_OUT = 90 * 1000l; // 默认连接超时时间
 
     // 构造方法私有
     private NettyClient(NettyClientConfig config){
         this.config = config;
-        this.init();
+        try {
+            this.init();
+        } catch (InterruptedException e) {
+            throw new SystemException("NettyClient build error...", e);
+        }
     }
 
     private NettyClientConfig config;
     private Channel channel;
 
-    private void init(){
+    private void init() throws InterruptedException {
 
         if(this.config == null){
             throw new SystemException("netty client config is null...");
@@ -42,27 +45,28 @@ public class NettyClient {
 
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.group(WORKER_GROUP)
-                    .channel(NioServerSocketChannel.class)
-                    .option(ChannelOption.SO_KEEPALIVE, true)
+                    .channel(NioSocketChannel.class)
+                    .remoteAddress(new InetSocketAddress(config.getHost(), config.getPort()))
                     .handler(new ChannelInitializer() {
             @Override
             protected void initChannel(Channel ch) throws Exception {
                 ChannelPipeline pipeline = ch.pipeline();
                 if(config.getHandlers()!=null && config.getHandlers().length>0){
-                    pipeline.addLast(config.getHandlers());
+                    for(ChannelHandler handler : config.getHandlers()){
+                        pipeline.addLast(handler.getClass().getName(), handler);
+                    }
                 }
             }
         });
 
-        ChannelFuture future = bootstrap.connect(this.config.getHost(), this.config.getPort());
-        boolean flag = future.awaitUninterruptibly(2000, TimeUnit.MILLISECONDS);
-        if(!flag){
-            throw new SystemException(this.config.getUri() + " connect failed...");
-        }
+        ChannelFuture future =
+                bootstrap.connect(this.config.getHost(), this.config.getPort());
 
         // channel
         this.channel = future.channel();
 //        this.refreshChannel(future, this.channel);
+
+//        future.channel().closeFuture().sync();
     }
 
 
@@ -196,31 +200,61 @@ public class NettyClient {
         }
 
         byte[] result;
-        final CountDownLatch latch = new CountDownLatch(1);
         try {
-
-            Promise<byte[]> promise = new DefaultPromise<>(new DefaultEventLoop());
-
-            // 发送请求并添加监听，等待请求完成
+            // 设置promise
+            Promise<byte[]> promise = NETTY_RESPONSE_PROMISE_NOTIFY_EVENT_LOOP.newPromise();
             client.channel.pipeline().get(NettyClientHandler.class).setPromise(promise);
-            client.channel.writeAndFlush(req).addListener(future -> {
-                if(future.isDone()){
-                    latch.countDown();
-                }
-            });
-            // 阻塞等待异步结果
-            latch.await();
 
-            result = promise.get();
+            // 发送请求
+            client.channel.writeAndFlush(req);
+
+            Long timeout = header.getLong(NETTY_CONNECTION_TIME_OUT, DEFAULT_CONNECT_TIME_OUT);
+            result = promise.get(timeout, TimeUnit.MILLISECONDS);
 
         } catch (Throwable e) {
             throw new SystemException("do request failed...", e);
-        } finally {
-            latch.countDown();
         }
 
         return result;
     }
 
+
+    // for rpc =============================================================================
+
+
+    final static ChannelHandler[] RPC_HANDLERS = new ChannelHandler[]{
+            new NettyClientHandler()
+    };
+
+    public static byte[] doRpcRequest(String url, byte[] message) {
+        return doRpcRequest(url, null, message);
+    }
+
+    public static byte[] doRpcRequest(String url, ChannelHandler[] handlers, byte[] message){
+        if(handlers == null){
+            handlers = RPC_HANDLERS;
+        }
+        NettyClient client = getNettyClient(url, handlers);
+        if(client == null){
+            throw new SystemException("netty client init failed...");
+        }
+
+        byte[] result;
+        try {
+            // 设置promise
+            Promise<byte[]> promise = NETTY_RESPONSE_PROMISE_NOTIFY_EVENT_LOOP.newPromise();
+            client.channel.pipeline().get(NettyClientHandler.class).setPromise(promise);
+
+            // 发送数据
+            ByteBuf byteBuf = Unpooled.copiedBuffer(message);
+            client.channel.writeAndFlush(byteBuf);
+
+            result = promise.get(DEFAULT_CONNECT_TIME_OUT, TimeUnit.MILLISECONDS);
+
+        } catch (Throwable e) {
+            throw new SystemException("do request failed...", e);
+        }
+        return result;
+    }
 
 }
