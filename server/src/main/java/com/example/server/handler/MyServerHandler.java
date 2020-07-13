@@ -15,6 +15,7 @@ public class MyServerHandler extends SimpleChannelInboundHandler<ByteBuf> {
     private Invoke<byte[]> invoke = new InvokeImpl();
 
     protected void messageReceived(ChannelHandlerContext ctx, ByteBuf o) {
+
         ByteBuf protobuf = o.readBytes(o.readableBytes());
         o.writeBytes(protobuf);
         MethodParams methodParams = ProtostuffUtils.deserializer(protobuf.array(), MethodParams.class);
@@ -30,7 +31,6 @@ public class MyServerHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-//        cause.printStackTrace();
-        ctx.close();
+        cause.printStackTrace();
     }
 }

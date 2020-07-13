@@ -21,15 +21,10 @@ public class NewClientMain {
 //        System.out.println(result);
 
         PersonService service = new ProxyHandler<>(PersonService.class).getProxy();
-//        Person person = service.load(2);
-//        System.out.println(person);
-//        person.setAge(31);
-//        person = service.update(person);
-//        System.out.println(person);;
-
-        Person person = service.update(new Person(1, "春十三娘", 18));
+        Person person = service.load(2);
         System.out.println(person);
-        System.out.println(service.load(1));
-
+        person.setAge(31);
+        person = service.update(person);
+        System.out.println(person);
     }
 }

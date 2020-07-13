@@ -4,6 +4,7 @@ import com.example.server.handler.MyServerHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
@@ -22,7 +23,9 @@ public class ServerMain {
         bootstrap.channel(NioServerSocketChannel.class);
 
         //channel的属性配置
-        bootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
+        bootstrap
+//                .option(ChannelOption.SO_KEEPALIVE, true)
+                .childHandler(new ChannelInitializer<SocketChannel>() {
             @Override
             public void initChannel(SocketChannel ch) {
                 ch.pipeline().addLast("myHandler", new MyServerHandler()); //请求匹配处理

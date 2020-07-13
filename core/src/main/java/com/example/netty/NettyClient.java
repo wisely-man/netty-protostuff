@@ -4,6 +4,7 @@ import com.wisely.core.exception.SystemException;
 import com.wisely.core.helper.Model;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -14,7 +15,6 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.concurrent.Promise;
 
 import java.io.UnsupportedEncodingException;
-import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
 
 public class NettyClient {
@@ -35,10 +35,19 @@ public class NettyClient {
     }
 
     private NettyClientConfig config;
+    private Bootstrap bootstrap;
     private Channel channel;
 
     public NettyClientConfig getConfig() {
         return config;
+    }
+
+    public Channel getChannel() {
+        return channel;
+    }
+
+    public void setChannel(Channel channel) {
+        this.channel = channel;
     }
 
     private void init() throws InterruptedException {
@@ -47,10 +56,12 @@ public class NettyClient {
             throw new SystemException("netty client config is null...");
         }
 
-        Bootstrap bootstrap = new Bootstrap();
-        bootstrap.group(WORKER_GROUP)
+        this.bootstrap = new Bootstrap();
+        this.bootstrap.group(WORKER_GROUP)
                     .channel(NioSocketChannel.class)
-                    .remoteAddress(new InetSocketAddress(config.getHost(), config.getPort()))
+                    .option(ChannelOption.SO_KEEPALIVE, true)
+                    .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 3000)
+//                    .remoteAddress(new InetSocketAddress(config.getHost(), config.getPort()))
                     .handler(new ChannelInitializer() {
             @Override
             protected void initChannel(Channel ch) throws Exception {
@@ -61,32 +72,22 @@ public class NettyClient {
             }
         });
 
+        this.reconnect();
+    }
+
+
+    private void reconnect(){
+        if(this.bootstrap == null || this.config == null){
+            return;
+        }
+
         ChannelFuture future =
-                bootstrap.connect(this.config.getHost(), this.config.getPort());
+                this.bootstrap.connect(this.config.getHost(), this.config.getPort());
 
         // channel
         this.channel = future.channel();
-//        this.refreshChannel(future, this.channel);
     }
 
-
-    /**
-     * 刷新channel
-     * @param newFuture
-     * @param oldChannel
-     */
-    private void refreshChannel(ChannelFuture newFuture, Channel oldChannel){
-        try {
-            if(oldChannel != null){
-                oldChannel.close();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            this.channel = newFuture.channel();
-        }
-
-    }
 
     // static Method ======================================================================
 
@@ -171,6 +172,9 @@ public class NettyClient {
         if(client == null){
             throw new SystemException("netty client init failed...");
         }
+        if(!client.getChannel().isOpen()){
+            client.reconnect();
+        }
 
         if(header == null){
             header = new Model();
@@ -228,9 +232,8 @@ public class NettyClient {
 
     // for rpc =============================================================================
 
-
     final static ChannelHandler[] RPC_HANDLERS = new ChannelHandler[]{
-            new NettyClientHandler()
+        new NettyClientHandler()
     };
 
     public static byte[] doRpcRequest(String url, byte[] message) {
@@ -248,6 +251,11 @@ public class NettyClient {
 
         byte[] result;
         try {
+
+            if(!client.channel.isOpen()){
+                client.reconnect();
+            }
+
             // 设置promise
             Promise<byte[]> promise = NETTY_RESPONSE_PROMISE_NOTIFY_EVENT_LOOP.newPromise();
             client.channel.pipeline().get(NettyClientHandler.class).setPromise(promise);
@@ -256,10 +264,13 @@ public class NettyClient {
             ByteBuf byteBuf = Unpooled.copiedBuffer(message);
             client.channel.writeAndFlush(byteBuf);
 
+            // 阻塞获取异步结果
             result = promise.get(DEFAULT_CONNECT_TIME_OUT, TimeUnit.MILLISECONDS);
 
         } catch (Throwable e) {
             throw new SystemException("do request failed...", e);
+        } finally {
+            NettyClientPool.release(client);
         }
         return result;
     }

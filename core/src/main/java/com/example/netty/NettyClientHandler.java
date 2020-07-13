@@ -1,7 +1,6 @@
 package com.example.netty;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -20,7 +19,6 @@ public class NettyClientHandler extends SimpleChannelInboundHandler<ByteBuf> {
     protected void messageReceived(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
         System.out.println("message received");
         this.promise.setSuccess(msg.readBytes(msg.readableBytes()).array());
-        ctx.flush();
     }
 
     @Override
@@ -28,6 +26,5 @@ public class NettyClientHandler extends SimpleChannelInboundHandler<ByteBuf> {
         System.out.println("exceptionCaught");
         cause.printStackTrace();
         this.promise.setFailure(cause);
-        ctx.close();
     }
 }
