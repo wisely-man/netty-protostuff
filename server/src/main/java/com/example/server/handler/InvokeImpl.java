@@ -6,10 +6,8 @@ import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtobufIOUtil;
 import io.protostuff.Schema;
 import io.protostuff.runtime.RuntimeSchema;
-import org.springframework.util.CollectionUtils;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
 
 public class InvokeImpl implements Invoke<byte[]> {
 

@@ -46,6 +46,19 @@ public class NettyClientPool extends GenericObjectPool<NettyClient> {
     }
 
 
+    public static void release(final NettyClient client){
+        if(client == null){
+            return;
+        }
+
+        NettyClientPool pool = CacheHelper.get(CACHE_KEY + client.getConfig().hashCode());
+        if(pool != null){
+            return;
+        }
+
+        pool.returnObject(client);
+    }
+
     public NettyClientPool(NettyClientFactory factory) {
         super(factory, new NettyClientPoolConfig());
     }

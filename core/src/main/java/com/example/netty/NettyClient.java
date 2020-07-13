@@ -37,6 +37,10 @@ public class NettyClient {
     private NettyClientConfig config;
     private Channel channel;
 
+    public NettyClientConfig getConfig() {
+        return config;
+    }
+
     private void init() throws InterruptedException {
 
         if(this.config == null){
@@ -52,9 +56,7 @@ public class NettyClient {
             protected void initChannel(Channel ch) throws Exception {
                 ChannelPipeline pipeline = ch.pipeline();
                 if(config.getHandlers()!=null && config.getHandlers().length>0){
-                    for(ChannelHandler handler : config.getHandlers()){
-                        pipeline.addLast(handler.getClass().getName(), handler);
-                    }
+                    pipeline.addLast(config.getHandlers());
                 }
             }
         });
@@ -65,8 +67,6 @@ public class NettyClient {
         // channel
         this.channel = future.channel();
 //        this.refreshChannel(future, this.channel);
-
-//        future.channel().closeFuture().sync();
     }
 
 
@@ -138,9 +138,6 @@ public class NettyClient {
 
 
 
-
-
-
     // for http ============================================================================
 
     public final static String HTTP_VERSION_KEY = "HTTP_VERSION_KEY";
@@ -153,6 +150,14 @@ public class NettyClient {
         new ChunkedWriteHandler(), // 大数据
         new NettyClientHandler() // 自定义处理类
     };
+
+    public static String doHttpGet(String url, Model header){
+        if(header == null){
+            header = new Model();
+        }
+        header.put(HTTP_METHOD_KEY, "POST");
+        return new String(doHttpRequest(url, header, ""));
+    }
 
     public static byte[] doHttpRequest(String url, Model header, String message){
         return doHttpRequest(url, null, header, message);
@@ -213,6 +218,8 @@ public class NettyClient {
 
         } catch (Throwable e) {
             throw new SystemException("do request failed...", e);
+        } finally {
+            NettyClientPool.release(client);
         }
 
         return result;
