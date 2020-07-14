@@ -41,6 +41,8 @@ public class MyClientHandler extends SimpleChannelInboundHandler {
 
         Person person = ProtostuffUtils.deserializer(protobuf.array(), Person.class);
         System.out.println(person);
+
+        ctx.close();
     }
 
     @Override

@@ -1,10 +1,11 @@
 package com.example.netty;
 
+import com.example.netty.handlers.NettyClientByteBufHandler;
+import com.example.netty.handlers.NettyClientHttpObjHandler;
 import com.wisely.core.exception.SystemException;
 import com.wisely.core.helper.Model;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -12,6 +13,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.AsciiString;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.Promise;
 
 import java.io.UnsupportedEncodingException;
@@ -149,22 +151,31 @@ public class NettyClient {
         new HttpObjectAggregator(1024 * 10 * 1024), // 聚合
         new HttpContentDecompressor(), // 解压
         new ChunkedWriteHandler(), // 大数据
-        new NettyClientHandler() // 自定义处理类
+        new IdleStateHandler(2,2,2, TimeUnit.SECONDS), // 心跳
+        new NettyClientHttpObjHandler(), // 自定义处理类
     };
 
     public static String doHttpGet(String url, Model header){
         if(header == null){
             header = new Model();
         }
-        header.put(HTTP_METHOD_KEY, "POST");
-        return new String(doHttpRequest(url, header, ""));
+        header.put(HTTP_METHOD_KEY, "GET");
+        return doHttpRequest(url, header, "");
     }
 
-    public static byte[] doHttpRequest(String url, Model header, String message){
+    public static String doHttpPost(String url, Model header, String message){
+        if(header == null){
+            header = new Model();
+        }
+        header.put(HTTP_METHOD_KEY, "POST");
+        return doHttpRequest(url, header, message);
+    }
+
+    public static String doHttpRequest(String url, Model header, String message){
         return doHttpRequest(url, null, header, message);
     }
 
-    public static byte[] doHttpRequest(String url, ChannelHandler[] handlers, Model header, String message){
+    public static String doHttpRequest(String url, ChannelHandler[] handlers, Model header, String message){
         if(handlers == null){
             handlers = HTTP_HANDLERS;
         }
@@ -208,15 +219,16 @@ public class NettyClient {
             }
         }
 
-        byte[] result;
+        String result;
         try {
             // 设置promise
-            Promise<byte[]> promise = NETTY_RESPONSE_PROMISE_NOTIFY_EVENT_LOOP.newPromise();
-            client.channel.pipeline().get(NettyClientHandler.class).setPromise(promise);
+            Promise<String> promise = NETTY_RESPONSE_PROMISE_NOTIFY_EVENT_LOOP.newPromise();
+            client.channel.pipeline().get(NettyClientHttpObjHandler.class).setPromise(promise);
 
             // 发送请求
             client.channel.writeAndFlush(req);
 
+            // 阻塞获取请求结果
             Long timeout = header.getLong(NETTY_CONNECTION_TIME_OUT, DEFAULT_CONNECT_TIME_OUT);
             result = promise.get(timeout, TimeUnit.MILLISECONDS);
 
@@ -233,7 +245,8 @@ public class NettyClient {
     // for rpc =============================================================================
 
     final static ChannelHandler[] RPC_HANDLERS = new ChannelHandler[]{
-        new NettyClientHandler()
+            new IdleStateHandler(2,2,2, TimeUnit.SECONDS), // 心跳
+            new NettyClientByteBufHandler()
     };
 
     public static byte[] doRpcRequest(String url, byte[] message) {
@@ -258,7 +271,7 @@ public class NettyClient {
 
             // 设置promise
             Promise<byte[]> promise = NETTY_RESPONSE_PROMISE_NOTIFY_EVENT_LOOP.newPromise();
-            client.channel.pipeline().get(NettyClientHandler.class).setPromise(promise);
+            client.channel.pipeline().get(NettyClientByteBufHandler.class).setPromise(promise);
 
             // 发送数据
             ByteBuf byteBuf = Unpooled.copiedBuffer(message);

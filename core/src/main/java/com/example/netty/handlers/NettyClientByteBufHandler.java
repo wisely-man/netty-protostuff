@@ -1,13 +1,18 @@
-package com.example.netty;
+package com.example.netty.handlers;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.concurrent.Promise;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 @ChannelHandler.Sharable
-public class NettyClientHandler extends SimpleChannelInboundHandler<ByteBuf> {
+public class NettyClientByteBufHandler extends SimpleChannelInboundHandler<ByteBuf> {
+
+    private Logger logger = LoggerFactory.getLogger(NettyClientByteBufHandler.class);
 
     private Promise<byte[]> promise;
 
@@ -17,14 +22,13 @@ public class NettyClientHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
     @Override
     protected void messageReceived(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
-        System.out.println("message received");
+        logger.debug("message received");
         this.promise.setSuccess(msg.readBytes(msg.readableBytes()).array());
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        System.out.println("exceptionCaught");
-        cause.printStackTrace();
+        logger.error("NettyClientByteBufHandler error: {}", cause);
         this.promise.setFailure(cause);
     }
 }
