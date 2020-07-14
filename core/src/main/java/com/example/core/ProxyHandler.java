@@ -1,6 +1,6 @@
 package com.example.core;
 
-import com.example.netty.client.NettyClient;
+import com.example.netty.NettyClient;
 import com.example.util.ProtostuffUtils;
 
 import java.lang.reflect.InvocationHandler;

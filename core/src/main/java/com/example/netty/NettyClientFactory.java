@@ -1,4 +1,4 @@
-package com.example.netty.client;
+package com.example.netty;
 
 import org.apache.commons.pool2.BasePooledObjectFactory;
 import org.apache.commons.pool2.PooledObject;

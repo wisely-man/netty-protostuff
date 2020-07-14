@@ -1,6 +1,9 @@
 package com.example.client;
 
-import com.example.netty.client.NettyClient;
+import com.example.core.ProxyHandler;
+import com.example.entity.Person;
+import com.example.netty.NettyClient;
+import com.example.service.PersonService;
 import com.wisely.core.helper.Model;
 import io.netty.handler.codec.http.HttpHeaderNames;
 
@@ -9,12 +12,12 @@ public class NewClientMain {
     public static void main(String[] args) {
 
         // rpc test
-//        PersonService service = new ProxyHandler<>(PersonService.class).getProxy();
-//        Person person = service.load(2);
-//        System.out.println(person);
-//        person.setAge(31);
-//        person = service.update(person);
-//        System.out.println(person);
+        PersonService service = new ProxyHandler<>(PersonService.class).getProxy();
+        Person person = service.load(2);
+        System.out.println(person);
+        person.setAge(31);
+        person = service.update(person);
+        System.out.println(person);
 
         // http test
         String url = "http://101.132.174.118:8888/gts/gtsWeightBill/list.json?page=1&rows=15";

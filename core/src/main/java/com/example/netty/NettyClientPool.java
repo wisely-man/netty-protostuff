@@ -1,4 +1,4 @@
-package com.example.netty.client;
+package com.example.netty;
 
 import com.wisely.core.helper.CacheHelper;
 import io.netty.channel.ChannelHandler;
