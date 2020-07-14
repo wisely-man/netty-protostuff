@@ -1,13 +1,8 @@
 package com.example.client;
 
-import com.example.core.ProxyHandler;
-import com.example.entity.Person;
-import com.example.netty.NettyClient;
-import com.example.service.PersonService;
+import com.example.netty.client.NettyClient;
 import com.wisely.core.helper.Model;
-import io.netty.handler.codec.AsciiString;
 import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.json.JsonObjectDecoder;
 
 public class NewClientMain {
 

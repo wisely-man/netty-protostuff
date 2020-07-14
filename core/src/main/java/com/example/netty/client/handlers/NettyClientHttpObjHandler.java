@@ -1,4 +1,4 @@
-package com.example.netty.handlers;
+package com.example.netty.client.handlers;
 
 import com.wisely.core.exception.SystemException;
 import io.netty.channel.ChannelHandler;

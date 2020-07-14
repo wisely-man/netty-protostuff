@@ -1,7 +1,7 @@
-package com.example.netty;
+package com.example.netty.client;
 
-import com.example.netty.handlers.NettyClientByteBufHandler;
-import com.example.netty.handlers.NettyClientHttpObjHandler;
+import com.example.netty.client.handlers.NettyClientByteBufHandler;
+import com.example.netty.client.handlers.NettyClientHttpObjHandler;
 import com.wisely.core.exception.SystemException;
 import com.wisely.core.helper.Model;
 import io.netty.bootstrap.Bootstrap;
@@ -22,9 +22,7 @@ import java.util.concurrent.TimeUnit;
 public class NettyClient {
 
     final static EventLoopGroup WORKER_GROUP = new NioEventLoopGroup();
-    final static DefaultEventLoop NETTY_RESPONSE_PROMISE_NOTIFY_EVENT_LOOP =  new DefaultEventLoop();
-    public final static String NETTY_CONNECTION_TIME_OUT = "NETTY_CONNECTION_TIME_OUT";
-    final static Long DEFAULT_CONNECT_TIME_OUT = 90 * 1000l; // 默认连接超时时间
+    final static DefaultEventLoop NETTY_RESPONSE_PROMISE_NOTIFY_EVENT_LOOP = new DefaultEventLoop();
 
     // 构造方法私有
     private NettyClient(NettyClientConfig config){
@@ -239,8 +237,7 @@ public class NettyClient {
             client.channel.writeAndFlush(req);
 
             // 阻塞获取请求结果
-            Long timeout = header.getLong(NETTY_CONNECTION_TIME_OUT, DEFAULT_CONNECT_TIME_OUT);
-            result = promise.get(timeout, TimeUnit.MILLISECONDS);
+            result = promise.getNow();
 
         } catch (Throwable e) {
             throw new SystemException("do request failed...", e);
@@ -288,7 +285,7 @@ public class NettyClient {
             client.channel.writeAndFlush(byteBuf);
 
             // 阻塞获取异步结果
-            result = promise.get(DEFAULT_CONNECT_TIME_OUT, TimeUnit.MILLISECONDS);
+            result = promise.getNow();
 
         } catch (Throwable e) {
             throw new SystemException("do request failed...", e);
