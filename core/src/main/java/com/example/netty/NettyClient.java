@@ -155,12 +155,22 @@ public class NettyClient {
         new NettyClientHttpObjHandler(), // 自定义处理类
     };
 
+    public static String doHttpGet(String url){
+        Model header = new Model();
+        header.put(HTTP_METHOD_KEY, "GET");
+        return doHttpGet(url, header);
+    }
+
     public static String doHttpGet(String url, Model header){
         if(header == null){
             header = new Model();
         }
         header.put(HTTP_METHOD_KEY, "GET");
         return doHttpRequest(url, header, "");
+    }
+
+    public static String doHttpPost(String url, String message) {
+        return doHttpPost(url, null, message);
     }
 
     public static String doHttpPost(String url, Model header, String message){
