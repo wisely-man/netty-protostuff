@@ -11,7 +11,6 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.AsciiString;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.stream.ChunkedWriteHandler;
-import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.Promise;
 
 import java.io.UnsupportedEncodingException;
@@ -19,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 
 public class NettyClient {
 
-    final static EventLoopGroup WORKER_GROUP = new NioEventLoopGroup();
+    final static EventLoopGroup WORKER_GROUP = new NioEventLoopGroup(5);
     final static DefaultEventLoop NETTY_RESPONSE_PROMISE_NOTIFY_EVENT_LOOP =  new DefaultEventLoop();
     public final static String NETTY_CONNECTION_TIME_OUT = "NETTY_CONNECTION_TIME_OUT";
     final static Long DEFAULT_CONNECT_TIME_OUT = 90 * 1000l; // 默认连接超时时间
@@ -27,11 +26,7 @@ public class NettyClient {
     // 构造方法私有
     private NettyClient(NettyClientConfig config){
         this.config = config;
-        try {
-            this.init();
-        } catch (InterruptedException e) {
-            throw new SystemException("NettyClient build error...", e);
-        }
+        this.init();
     }
 
     private NettyClientConfig config;
@@ -46,7 +41,7 @@ public class NettyClient {
         return channel;
     }
 
-    private void init() throws InterruptedException {
+    private void init() {
 
         if(this.config == null){
             throw new SystemException("netty client config is null...");
@@ -140,14 +135,18 @@ public class NettyClient {
     public final static String HTTP_VERSION_KEY = "HTTP_VERSION_KEY";
     public final static String HTTP_METHOD_KEY = "HTTP_METHOD_KEY";
 
-    public final static ChannelHandler[] HTTP_HANDLERS = new ChannelHandler[]{
-        new HttpClientCodec(), // 编解码器
-        new HttpObjectAggregator(1024 * 10 * 1024), // 聚合
-        new HttpContentDecompressor(), // 解压
-        new ChunkedWriteHandler(), // 大数据
-        new IdleStateHandler(2,2,2, TimeUnit.SECONDS), // 心跳
-        new NettyClientHttpObjHandler(), // 自定义处理类
-    };
+
+    private static ChannelHandler[] httpHandlers(){
+        ChannelHandler[] handlers = new ChannelHandler[]{
+                new HttpClientCodec(), // 编解码器
+                new HttpObjectAggregator(1024 * 10 * 1024), // 聚合
+                new HttpContentDecompressor(), // 解压
+                new ChunkedWriteHandler(), // 大数据
+//        new IdleStateHandler(2,2,2, TimeUnit.SECONDS), // 心跳
+                new NettyClientHttpObjHandler(), // 自定义处理类
+        };
+        return handlers;
+    }
 
     public static String doHttpGet(String url){
         Model header = new Model();
@@ -181,7 +180,7 @@ public class NettyClient {
 
     public static String doHttpRequest(String url, ChannelHandler[] handlers, Model header, String message){
         if(handlers == null){
-            handlers = HTTP_HANDLERS;
+            handlers = httpHandlers();
         }
         NettyClient client = getNettyClient(url, handlers);
         if(client == null){
@@ -248,10 +247,13 @@ public class NettyClient {
 
     // for rpc =============================================================================
 
-    final static ChannelHandler[] RPC_HANDLERS = new ChannelHandler[]{
-            new IdleStateHandler(2,2,2, TimeUnit.SECONDS), // 心跳
-            new NettyClientByteBufHandler()
-    };
+    private static ChannelHandler[] rpcHandlers(){
+        ChannelHandler[] handlers = new ChannelHandler[]{
+//            new IdleStateHandler(2,2,2, TimeUnit.SECONDS), // 心跳
+                new NettyClientByteBufHandler()
+        };
+        return handlers;
+    }
 
     public static byte[] doRpcRequest(String url, byte[] message) {
         return doRpcRequest(url, null, message);
@@ -259,7 +261,7 @@ public class NettyClient {
 
     public static byte[] doRpcRequest(String url, ChannelHandler[] handlers, byte[] message){
         if(handlers == null){
-            handlers = RPC_HANDLERS;
+            handlers = rpcHandlers();
         }
         NettyClient client = getNettyClient(url, handlers);
         if(client == null){

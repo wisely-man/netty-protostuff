@@ -5,11 +5,12 @@ import com.example.service.PersonService;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 public class PersonServiceImpl implements PersonService {
 
-    private static Map<Integer, Person> map = new HashMap(){{
+    private static ConcurrentHashMap<Integer, Person> map = new ConcurrentHashMap(){{
         put(1, new Person(1, "春花", 18));
         put(2, new Person(2, "张三", 20));
         put(3, new Person(3, "李四", 25));

@@ -29,6 +29,6 @@ public class NettyClientByteBufHandler extends SimpleChannelInboundHandler<ByteB
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         logger.error("NettyClientByteBufHandler error: {}", cause);
-        this.promise.setFailure(cause);
+        this.promise.tryFailure(cause);
     }
 }
