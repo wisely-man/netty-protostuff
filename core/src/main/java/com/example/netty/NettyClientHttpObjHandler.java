@@ -24,7 +24,7 @@ public class NettyClientHttpObjHandler extends SimpleChannelInboundHandler<HttpO
     }
 
     @Override
-    protected void messageReceived(ChannelHandlerContext ctx, HttpObject msg) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, HttpObject msg) throws Exception {
         logger.debug("message received");
 
         if (msg instanceof HttpResponse) {
@@ -47,7 +47,7 @@ public class NettyClientHttpObjHandler extends SimpleChannelInboundHandler<HttpO
                 logger.debug("=================== head end =========================");
             }
 
-            if (HttpHeaderUtil.isTransferEncodingChunked(response)) {
+            if (HttpUtil.isTransferEncodingChunked(response)) {
                 logger.debug("CHUNKED CONTENT {");
             } else {
                 logger.debug("CONTENT {");
@@ -71,5 +71,6 @@ public class NettyClientHttpObjHandler extends SimpleChannelInboundHandler<HttpO
         logger.debug("exceptionCaught");
         cause.printStackTrace();
         this.promise.setFailure(cause);
+        ctx.close();
     }
 }

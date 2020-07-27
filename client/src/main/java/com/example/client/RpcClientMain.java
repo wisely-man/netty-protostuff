@@ -17,26 +17,26 @@ public class RpcClientMain {
 
         final ExecutorService executorService = Executors.newFixedThreadPool(10);
 
-        final CountDownLatch latch = new CountDownLatch(10);
+//        final CountDownLatch latch = new CountDownLatch(10);
 
         // rpc test
         for(int i=0; i<10; i++){
-            executorService.submit(() -> {
+//            executorService.submit(() -> {
                 try {
                     PersonService service = new ProxyHandler<>(PersonService.class).getProxy();
                     Person person = service.load(2);
                     person.setAge(31);
                     person = service.update(person);
-                    System.out.println(Thread.currentThread().getName() + person);
+                    System.out.println(Thread.currentThread().getName() + " : " + person);
                 } catch (Exception e) {
                     e.printStackTrace();
                 } finally {
-                    latch.countDown();
+//                    latch.countDown();
                 }
-            });
+//            });
         }
 
-        latch.await();
+//        latch.await();
 
     }
 }

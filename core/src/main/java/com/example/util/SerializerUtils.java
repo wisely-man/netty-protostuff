@@ -1,7 +1,7 @@
 package com.example.util;
 
 import io.protostuff.LinkedBuffer;
-import io.protostuff.ProtostuffIOUtil;
+import io.protostuff.ProtobufIOUtil;
 import io.protostuff.Schema;
 import io.protostuff.runtime.RuntimeSchema;
 
@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 
-public class ProtostuffUtils {
+public class SerializerUtils {
 
     private static Map<Class<?>, Schema<?>> cachedSchema = new ConcurrentHashMap<>();
 
@@ -37,7 +37,7 @@ public class ProtostuffUtils {
         LinkedBuffer buffer = LinkedBuffer.allocate(LinkedBuffer.DEFAULT_BUFFER_SIZE);
         try {
             Schema<T> schema = getSchema(clazz);
-            return ProtostuffIOUtil.toByteArray(obj, schema, buffer);
+            return ProtobufIOUtil.toByteArray(obj, schema, buffer);
         } catch (Exception e) {
             throw new IllegalStateException(e.getMessage(), e);
         } finally {
@@ -56,7 +56,7 @@ public class ProtostuffUtils {
         try {
             T obj = clazz.newInstance();
             Schema<T> schema = getSchema(clazz);
-            ProtostuffIOUtil.mergeFrom(data, obj, schema);
+            ProtobufIOUtil.mergeFrom(data, obj, schema);
             return obj;
         } catch (Exception e) {
             throw new IllegalStateException(e.getMessage(), e);

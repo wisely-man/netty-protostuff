@@ -1,9 +1,9 @@
 package com.example.client.handler;
 
 import com.example.core.MethodParams;
-import com.example.util.ProtostuffUtils;
 import com.example.entity.Person;
 import com.example.service.PersonService;
+import com.example.util.SerializerUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;
@@ -28,18 +28,18 @@ public class MyClientHandler extends SimpleChannelInboundHandler {
         methodParams.setMethodName("update");
         methodParams.setParams(new Person(4, "李四", 30));
 
-        byte[] protobuf = ProtostuffUtils.serializer(methodParams);
+        byte[] protobuf = SerializerUtils.serializer(methodParams);
         ctx.writeAndFlush(Unpooled.copiedBuffer(protobuf));
     }
 
     @Override
-    protected void messageReceived(ChannelHandlerContext ctx, Object msg) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
         // 解析数据
         ByteBuf o = (ByteBuf) msg;
-        ByteBuf protobuf = o.readBytes(o.readableBytes());
-        o.writeBytes(protobuf);
+        byte[] protobuf = new byte[o.readableBytes()];
+        o.readBytes(protobuf);
 
-        Person person = ProtostuffUtils.deserializer(protobuf.array(), Person.class);
+        Person person = SerializerUtils.deserializer(protobuf, Person.class);
         System.out.println(person);
 
         ctx.close();

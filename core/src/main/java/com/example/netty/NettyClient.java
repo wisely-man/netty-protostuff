@@ -8,9 +8,9 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.AsciiString;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.util.AsciiString;
 import io.netty.util.concurrent.Promise;
 
 import java.io.UnsupportedEncodingException;
@@ -67,7 +67,7 @@ public class NettyClient {
     }
 
 
-    private void reconnect(){
+    void reconnect(){
         if(this.bootstrap == null || this.config == null){
             return;
         }
@@ -268,12 +268,13 @@ public class NettyClient {
             throw new SystemException("netty client init failed...");
         }
 
+        System.out.println(client);
+        if(client.channel.pipeline().get(NettyClientByteBufHandler.class) == null){
+            System.out.println("is null....");
+        }
+
         byte[] result;
         try {
-
-            if(!client.channel.isOpen()){
-                client.reconnect();
-            }
 
             // 设置promise
             Promise<byte[]> promise = NETTY_RESPONSE_PROMISE_NOTIFY_EVENT_LOOP.newPromise();

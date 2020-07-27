@@ -13,7 +13,7 @@
         <core.base.version>1.0-SNAPSHOT</core.base.version>
         <javassist.version>3.27.0-GA</javassist.version>
         <protostuff.version>1.6.0</protostuff.version>
-        <netty.version>5.0.0.Alpha2</netty.version>
+        <netty.version>4.1.51.Final</netty.version>
         <commons.lang3.version>3.10</commons.lang3.version>
         <commons.pool2.version>2.3</commons.pool2.version>
     </properties>

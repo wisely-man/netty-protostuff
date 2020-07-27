@@ -29,4 +29,12 @@ public class NettyClientFactory extends BasePooledObjectFactory<NettyClient> {
     public PooledObject<NettyClient> wrap(NettyClient nettyClient) {
         return new DefaultPooledObject<>(nettyClient);
     }
+
+    @Override
+    public void activateObject(PooledObject<NettyClient> p) {
+        NettyClient client = p.getObject();
+        if(!client.getChannel().isActive() || !client.getChannel().isOpen()){
+            client.reconnect();
+        }
+    }
 }

@@ -2,7 +2,7 @@ package com.example.server.handler;
 
 import com.example.core.Invoke;
 import com.example.core.MethodParams;
-import com.example.util.ProtostuffUtils;
+import com.example.util.SerializerUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;
@@ -14,11 +14,11 @@ public class MyServerHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
     private Invoke<byte[]> invoke = new InvokeImpl();
 
-    protected void messageReceived(ChannelHandlerContext ctx, ByteBuf o) {
+    protected void channelRead0(ChannelHandlerContext ctx, ByteBuf o) {
 
-        ByteBuf protobuf = o.readBytes(o.readableBytes());
-        o.writeBytes(protobuf);
-        MethodParams methodParams = ProtostuffUtils.deserializer(protobuf.array(), MethodParams.class);
+        byte[] protobuf = new byte[o.readableBytes()];
+        o.readBytes(protobuf);
+        MethodParams methodParams = SerializerUtils.deserializer(protobuf, MethodParams.class);
         System.out.println(methodParams);
 
         try {
@@ -32,5 +32,6 @@ public class MyServerHandler extends SimpleChannelInboundHandler<ByteBuf> {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         cause.printStackTrace();
+        ctx.writeAndFlush(cause);
     }
 }

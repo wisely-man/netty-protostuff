@@ -5,6 +5,9 @@ import io.netty.channel.ChannelHandler;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
+/**
+ * GenericObjectPool can be instead of GenericKeyedObjectPool
+ */
 public class NettyClientPool extends GenericObjectPool<NettyClient> {
 
 
@@ -75,7 +78,6 @@ public class NettyClientPool extends GenericObjectPool<NettyClient> {
     private static class NettyClientPoolConfig extends GenericObjectPoolConfig {
 
         public NettyClientPoolConfig(){
-
             // 最大空闲数
             setMaxIdle(5);
             // 最小空闲数, 池中只有一个空闲对象的时候，池会在创建一个对象，并借出一个对象，从而保证池中最小空闲数为1
@@ -96,11 +98,10 @@ public class NettyClientPool extends GenericObjectPool<NettyClient> {
             setMaxWaitMillis(5000);
             // 是否启用后进先出, 默认true
             setLifo(true);
-            // 连接耗尽时是否阻塞, false报异常,ture阻塞直到超时, 默认true
+            // 连接耗尽时是否阻塞, false报异常,true阻塞直到超时, 默认true
             setBlockWhenExhausted(true);
             // 每次逐出检查时 逐出的最大数目 默认3
             setNumTestsPerEvictionRun(3);
-
         }
 
     }

@@ -21,9 +21,11 @@ public class NettyClientByteBufHandler extends SimpleChannelInboundHandler<ByteB
     }
 
     @Override
-    protected void messageReceived(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
         logger.debug("message received");
-        this.promise.setSuccess(msg.readBytes(msg.readableBytes()).array());
+        byte[] protobuf = new byte[msg.readableBytes()];
+        msg.readBytes(protobuf);
+        this.promise.setSuccess(protobuf);
     }
 
     @Override
@@ -31,4 +33,12 @@ public class NettyClientByteBufHandler extends SimpleChannelInboundHandler<ByteB
         logger.error("NettyClientByteBufHandler error: {}", cause);
         this.promise.tryFailure(cause);
     }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        super.channelInactive(ctx);
+        System.out.println("channel in active");
+    }
+
+
 }

@@ -9,6 +9,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.protobuf.ProtobufEncoder;
 
 public class ServerMain {
 
@@ -28,7 +29,7 @@ public class ServerMain {
                 .childHandler(new ChannelInitializer<SocketChannel>() {
             @Override
             public void initChannel(SocketChannel ch) {
-                ch.pipeline().addLast("myHandler", new MyServerHandler()); //请求匹配处理
+                ch.pipeline().addLast(new MyServerHandler()); //请求匹配处理
             }
         })
         ;

@@ -1,7 +1,7 @@
 package com.example.core;
 
 import com.example.netty.NettyClient;
-import com.example.util.ProtostuffUtils;
+import com.example.util.SerializerUtils;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -25,10 +25,10 @@ public class ProxyHandler<T> implements InvocationHandler {
         request.setMethodName(method.getName());
         request.setParams(args);
 
-        byte[] protobuf = ProtostuffUtils.serializer(request);
+        byte[] protobuf = SerializerUtils.serializer(request);
         byte[] result = NettyClient.doRpcRequest("http://localhost:8080", protobuf);
 
-        return ProtostuffUtils.deserializer(result, method.getReturnType());
+        return SerializerUtils.deserializer(result, method.getReturnType());
     }
 
 
