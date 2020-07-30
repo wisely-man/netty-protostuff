@@ -15,12 +15,12 @@ public class RpcClientMain {
 
     public static void main(String[] args) throws InterruptedException {
 
-        final ExecutorService executorService = Executors.newFixedThreadPool(10);
+//        final ExecutorService executorService = Executors.newFixedThreadPool(10);
 
 //        final CountDownLatch latch = new CountDownLatch(10);
 
         // rpc test
-        for(int i=0; i<10; i++){
+//        for(int i=0; i<10; i++){
 //            executorService.submit(() -> {
                 try {
                     PersonService service = new ProxyHandler<>(PersonService.class).getProxy();
@@ -34,7 +34,7 @@ public class RpcClientMain {
 //                    latch.countDown();
                 }
 //            });
-        }
+//        }
 
 //        latch.await();
 

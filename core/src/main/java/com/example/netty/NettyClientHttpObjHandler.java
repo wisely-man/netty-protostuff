@@ -34,7 +34,7 @@ public class NettyClientHttpObjHandler extends SimpleChannelInboundHandler<HttpO
             logger.debug("VERSION: " + response.protocolVersion());
 
             if(!HttpResponseStatus.OK.equals(response.status())){
-                this.nettyResponse.set(null);
+                this.nettyResponse.setError(new SystemException("netty client no response"));
                 return;
             }
 
@@ -59,7 +59,7 @@ public class NettyClientHttpObjHandler extends SimpleChannelInboundHandler<HttpO
 
             if (content instanceof LastHttpContent) {
                 logger.debug("} END OF CONTENT");
-                this.nettyResponse.set(result.toString());
+                this.nettyResponse.setSuccess(result.toString());
             }
         }
     }
@@ -68,7 +68,7 @@ public class NettyClientHttpObjHandler extends SimpleChannelInboundHandler<HttpO
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         logger.debug("exceptionCaught");
         cause.printStackTrace();
-        this.nettyResponse.set(null);
+        this.nettyResponse.setError(cause);
         ctx.close();
     }
 }

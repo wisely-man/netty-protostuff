@@ -32,6 +32,7 @@ public class MyServerHandler extends SimpleChannelInboundHandler<ByteBuf> {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         cause.printStackTrace();
-        ctx.writeAndFlush(cause);
+//        ctx.writeAndFlush(cause);
+        ctx.close();
     }
 }

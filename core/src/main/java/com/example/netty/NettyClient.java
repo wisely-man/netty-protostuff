@@ -12,15 +12,12 @@ import io.netty.handler.codec.http.*;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.AsciiString;
 import io.netty.util.AttributeKey;
-import io.netty.util.concurrent.Promise;
 
 import java.io.UnsupportedEncodingException;
-import java.util.concurrent.TimeUnit;
 
 public class NettyClient {
 
-    final static EventLoopGroup WORKER_GROUP = new NioEventLoopGroup(5);
-    public final static String NETTY_CONNECTION_TIME_OUT = "NETTY_CONNECTION_TIME_OUT";
+    final static EventLoopGroup WORKER_GROUP = new NioEventLoopGroup(1);
     static final AttributeKey NETTY_CLIENT_PROMISE = AttributeKey.newInstance("NETTY_CLIENT_PROMISE");
 
     // 构造方法私有
@@ -260,7 +257,10 @@ public class NettyClient {
 
     public static byte[] doRpcRequest(String url, ChannelHandler[] handlers, byte[] message){
         if(handlers == null){
-            handlers = rpcHandlers();
+            handlers = new ChannelHandler[]{
+//            new IdleStateHandler(2,2,2, TimeUnit.SECONDS), // 心跳
+                    new NettyClientByteBufHandler()
+            };
         }
         NettyClient client = getNettyClient(url, handlers);
         if(client == null){
