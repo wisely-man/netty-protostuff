@@ -11,6 +11,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.AsciiString;
+import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.Promise;
 
 import java.io.UnsupportedEncodingException;
@@ -19,9 +20,8 @@ import java.util.concurrent.TimeUnit;
 public class NettyClient {
 
     final static EventLoopGroup WORKER_GROUP = new NioEventLoopGroup(5);
-    final static DefaultEventLoop NETTY_RESPONSE_PROMISE_NOTIFY_EVENT_LOOP =  new DefaultEventLoop();
     public final static String NETTY_CONNECTION_TIME_OUT = "NETTY_CONNECTION_TIME_OUT";
-    final static Long DEFAULT_CONNECT_TIME_OUT = 90 * 1000l; // 默认连接超时时间
+    static final AttributeKey NETTY_CLIENT_PROMISE = AttributeKey.newInstance("NETTY_CLIENT_PROMISE");
 
     // 构造方法私有
     private NettyClient(NettyClientConfig config){
@@ -225,15 +225,14 @@ public class NettyClient {
         String result;
         try {
             // 设置promise
-            Promise<String> promise = NETTY_RESPONSE_PROMISE_NOTIFY_EVENT_LOOP.newPromise();
-            client.channel.pipeline().get(NettyClientHttpObjHandler.class).setPromise(promise);
+            NettyResponse<String> response = new NettyResponse();
+            client.channel.pipeline().channel().attr(NETTY_CLIENT_PROMISE).set(response);
 
             // 发送请求
             client.channel.writeAndFlush(req);
 
             // 阻塞获取请求结果
-            Long timeout = header.getLong(NETTY_CONNECTION_TIME_OUT, DEFAULT_CONNECT_TIME_OUT);
-            result = promise.get(timeout, TimeUnit.MILLISECONDS);
+            result = response.get();
 
         } catch (Throwable e) {
             throw new SystemException("do request failed...", e);
@@ -268,24 +267,19 @@ public class NettyClient {
             throw new SystemException("netty client init failed...");
         }
 
-        System.out.println(client);
-        if(client.channel.pipeline().get(NettyClientByteBufHandler.class) == null){
-            System.out.println("is null....");
-        }
-
         byte[] result;
         try {
 
-            // 设置promise
-            Promise<byte[]> promise = NETTY_RESPONSE_PROMISE_NOTIFY_EVENT_LOOP.newPromise();
-            client.channel.pipeline().get(NettyClientByteBufHandler.class).setPromise(promise);
+            // 设置响应
+            NettyResponse<byte[]> response = new NettyResponse();
+            client.channel.pipeline().channel().attr(NETTY_CLIENT_PROMISE).set(response);
 
             // 发送数据
             ByteBuf byteBuf = Unpooled.copiedBuffer(message);
             client.channel.writeAndFlush(byteBuf);
 
             // 阻塞获取异步结果
-            result = promise.get(DEFAULT_CONNECT_TIME_OUT, TimeUnit.MILLISECONDS);
+            result = response.get();
 
         } catch (Throwable e) {
             throw new SystemException("do request failed...", e);

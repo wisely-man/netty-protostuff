@@ -69,24 +69,14 @@ public class NettyClientConfig {
 
     /**
      * 重写hashCode方法
-     *      相同scheme/host/port/handlers 的Pool不再重复创建新的连接池
+     *      相同 host/port/handlers 的Pool不再重复创建新的连接池
      * @return
      */
     @Override
     public int hashCode() {
-        StringBuffer  hash = new StringBuffer();
-        hash.append(this.getScheme())
-                .append(this.getHost())
-                .append(this.getPort())
-        ;
-        if(this.getHandlers()!=null &&
-                this.getHandlers().length>0){
-            Arrays.stream(this.getHandlers()).forEach(x->{
-                hash.append(x.getClass().toString());
-            });
-        }
-
-        return hash.toString().hashCode();
+        final int prime = 31;
+        return (this.getHost() + ":" + this.getPort()).hashCode() * prime
+                + Arrays.hashCode(this.handlers);
     }
 
 }

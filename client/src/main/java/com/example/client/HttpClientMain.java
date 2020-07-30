@@ -26,19 +26,19 @@ public class HttpClientMain {
 
         for(int i=0; i<10; i++) {
 
-            executorService.submit(() -> {
+//            executorService.submit(() -> {
                 try {
                     String result = NettyClient.doHttpGet(url, header);
                     System.out.println(result);
                 } catch (Exception e) {
                     e.printStackTrace();
                 } finally {
-                    latch2.countDown();
+//                    latch2.countDown();
                 }
-            });
+//            });
         }
 
-        latch2.await();
+//        latch2.await();
 
     }
 }

@@ -17,15 +17,13 @@ public class NettyClientHttpObjHandler extends SimpleChannelInboundHandler<HttpO
 
     private StringBuffer result = new StringBuffer();
 
-    private Promise<String> promise;
-
-    public void setPromise(Promise promise) {
-        this.promise = promise;
-    }
+    private NettyResponse<String> nettyResponse;
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, HttpObject msg) throws Exception {
         logger.debug("message received");
+
+        this.nettyResponse = (NettyResponse<String>) ctx.channel().attr(NettyClient.NETTY_CLIENT_PROMISE).get();
 
         if (msg instanceof HttpResponse) {
             HttpResponse response = (HttpResponse) msg;
@@ -36,7 +34,7 @@ public class NettyClientHttpObjHandler extends SimpleChannelInboundHandler<HttpO
             logger.debug("VERSION: " + response.protocolVersion());
 
             if(!HttpResponseStatus.OK.equals(response.status())){
-                promise.setFailure(new SystemException("http status error:" + response.status()));
+                this.nettyResponse.set(null);
                 return;
             }
 
@@ -61,7 +59,7 @@ public class NettyClientHttpObjHandler extends SimpleChannelInboundHandler<HttpO
 
             if (content instanceof LastHttpContent) {
                 logger.debug("} END OF CONTENT");
-                this.promise.setSuccess(result.toString());
+                this.nettyResponse.set(result.toString());
             }
         }
     }
@@ -70,7 +68,7 @@ public class NettyClientHttpObjHandler extends SimpleChannelInboundHandler<HttpO
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         logger.debug("exceptionCaught");
         cause.printStackTrace();
-        this.promise.setFailure(cause);
+        this.nettyResponse.set(null);
         ctx.close();
     }
 }

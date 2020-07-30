@@ -8,30 +8,32 @@ import io.netty.util.concurrent.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
+
 
 @ChannelHandler.Sharable
 public class NettyClientByteBufHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
     private Logger logger = LoggerFactory.getLogger(NettyClientByteBufHandler.class);
 
-    private Promise<byte[]> promise;
-
-    public void setPromise(Promise promise) {
-        this.promise = promise;
-    }
+    private NettyResponse<byte[]> nettyResponse;
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
-        logger.debug("message received");
+        nettyResponse = (NettyResponse<byte[]>) ctx.channel().attr(NettyClient.NETTY_CLIENT_PROMISE).get();
+
         byte[] protobuf = new byte[msg.readableBytes()];
         msg.readBytes(protobuf);
-        this.promise.setSuccess(protobuf);
+
+        System.out.println(Arrays.toString(protobuf));
+
+        this.nettyResponse.set(protobuf);
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        logger.error("NettyClientByteBufHandler error: {}", cause);
-        this.promise.tryFailure(cause);
+        cause.printStackTrace();
+        this.nettyResponse.set(null);
     }
 
     @Override
