@@ -1,16 +1,17 @@
 package com.example.netty;
 
+import com.example.netty.handlers.ChannelHandlerFactory;
 import com.wisely.core.exception.SystemException;
-import io.netty.channel.ChannelHandler;
+import com.wisely.core.helper.AssertHelper;
 import org.apache.commons.lang3.StringUtils;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Arrays;
 
 public class NettyClientConfig {
 
     public NettyClientConfig(String url) throws SystemException {
+        AssertHelper.isEmpty(url, "url can not be null");
         try {
             this.uri = new URI(url);
         } catch (URISyntaxException e) {
@@ -18,13 +19,13 @@ public class NettyClientConfig {
         }
     }
 
-    public NettyClientConfig(String url, ChannelHandler...handlers) throws SystemException {
+    public NettyClientConfig(String url, ChannelHandlerFactory handlerFactory) throws SystemException {
         this(url);
-        this.handlers = handlers;
+        this.handlerFactory = handlerFactory;
     }
 
     private URI uri;
-    private ChannelHandler[] handlers;
+    private ChannelHandlerFactory handlerFactory;
 
 
     public URI getUri() {
@@ -35,12 +36,12 @@ public class NettyClientConfig {
         this.uri = uri;
     }
 
-    public ChannelHandler[] getHandlers() {
-        return handlers;
+    public ChannelHandlerFactory getHandlerFactory() {
+        return handlerFactory;
     }
 
-    public void setHandlers(ChannelHandler[] handlers) {
-        this.handlers = handlers;
+    public void setHandlerFactory(ChannelHandlerFactory handlerFactory) {
+        this.handlerFactory = handlerFactory;
     }
 
     public String getScheme(){
@@ -75,8 +76,9 @@ public class NettyClientConfig {
     @Override
     public int hashCode() {
         final int prime = 31;
+        int factoryHash = this.handlerFactory==null ? 0 : this.handlerFactory.hashCode();
         return (this.getHost() + ":" + this.getPort()).hashCode() * prime
-                + Arrays.hashCode(this.handlers);
+                + factoryHash;
     }
 
 }

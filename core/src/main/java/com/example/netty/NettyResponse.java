@@ -8,7 +8,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class NettyResponse<V> {
 
-    private final static long TIME_OUT = 10 * 1000l;
+    private final static long TIME_OUT = 30 * 1000l;
 
     public NettyResponse() {
         this(TIME_OUT);
@@ -31,7 +31,6 @@ public class NettyResponse<V> {
 
 
     public void setSuccess(V v){
-        System.out.println("received");
         LOCK.lock();
         try {
             this.status = 200;
@@ -39,13 +38,11 @@ public class NettyResponse<V> {
                 this.status = 500;
             }
             this.v = v;
-            condition.signal();
+            condition.signalAll();
 
         } catch (Exception e) {
             throw e;
         } finally {
-
-
             LOCK.unlock();
         }
     }
@@ -55,7 +52,7 @@ public class NettyResponse<V> {
         try {
             this.status = 500;
             this.throwable = throwable;
-            condition.signal();
+            condition.signalAll();
 
         } catch (Exception e) {
             throw e;
@@ -70,10 +67,8 @@ public class NettyResponse<V> {
             LOCK.lock();
             try {
                 while(!isDone()) {
-                    condition.await(timeout, TimeUnit.MILLISECONDS);
-                    System.out.println("signal");
+                    condition.await(1000, TimeUnit.MILLISECONDS);
                     if(isDone() || System.currentTimeMillis()-start > timeout){
-                        System.out.println("it break..");
                         break;
                     }
                 }

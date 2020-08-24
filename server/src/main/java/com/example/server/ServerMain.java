@@ -9,7 +9,6 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.protobuf.ProtobufEncoder;
 
 public class ServerMain {
 
@@ -25,14 +24,14 @@ public class ServerMain {
 
         //channel的属性配置
         bootstrap
-//                .option(ChannelOption.SO_KEEPALIVE, true)
-                .childHandler(new ChannelInitializer<SocketChannel>() {
-            @Override
-            public void initChannel(SocketChannel ch) {
-                ch.pipeline().addLast(new MyServerHandler()); //请求匹配处理
-            }
-        })
-        ;
+            .childOption(ChannelOption.TCP_NODELAY, true)
+            .childHandler(new ChannelInitializer<SocketChannel>() {
+                @Override
+                public void initChannel(SocketChannel ch) {
+                    System.out.println("server init handler...");
+                    ch.pipeline().addLast(new MyServerHandler()); //请求匹配处理
+                }
+            });
 
         ChannelFuture channelFuture = bootstrap.bind(8080);
         channelFuture.addListener(future -> System.out.println("server start..."));

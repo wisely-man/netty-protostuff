@@ -1,7 +1,7 @@
 package com.example.netty;
 
+import com.example.netty.handlers.ChannelHandlerFactory;
 import com.wisely.core.helper.CacheHelper;
-import io.netty.channel.ChannelHandler;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
@@ -20,12 +20,12 @@ public class NettyClientPool extends GenericObjectPool<NettyClient> {
      * 获取连接池
      *     根据NettyClientConfig的hash值存储在缓存中
      * @param url
-     * @param handlers
+     * @param handlerFactory
      * @return
      */
-    public static NettyClientPool getPool(final String url, final ChannelHandler...handlers){
+    public static NettyClientPool getPool(final String url, final ChannelHandlerFactory handlerFactory){
 
-        NettyClientConfig config = new NettyClientConfig(url, handlers);
+        NettyClientConfig config = new NettyClientConfig(url, handlerFactory);
 
         // 从缓存种获取连接池对象
         NettyClientPool pool = CacheHelper.get(CACHE_KEY + config.hashCode());

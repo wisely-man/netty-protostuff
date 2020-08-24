@@ -25,9 +25,10 @@ public class RpcClientMain {
                 try {
                     PersonService service = new ProxyHandler<>(PersonService.class).getProxy();
                     Person person = service.load(2);
+                    System.out.println("load ： " + person);
                     person.setAge(31);
                     person = service.update(person);
-                    System.out.println(Thread.currentThread().getName() + " : " + person);
+                    System.out.println("update : " + person);
                 } catch (Exception e) {
                     e.printStackTrace();
                 } finally {

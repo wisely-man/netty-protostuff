@@ -1,5 +1,8 @@
 package com.example.netty;
 
+import com.example.netty.handlers.ChannelHandlerFactory;
+import com.example.netty.handlers.DefaultHttpChannelHandlerFactory;
+import com.example.netty.handlers.DefaultRpcChannelHandlerFactory;
 import com.wisely.core.exception.SystemException;
 import com.wisely.core.helper.Model;
 import io.netty.bootstrap.Bootstrap;
@@ -9,16 +12,16 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.*;
-import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.AsciiString;
 import io.netty.util.AttributeKey;
 
 import java.io.UnsupportedEncodingException;
+import java.net.InetSocketAddress;
 
 public class NettyClient {
 
     final static EventLoopGroup WORKER_GROUP = new NioEventLoopGroup(1);
-    static final AttributeKey NETTY_CLIENT_PROMISE = AttributeKey.newInstance("NETTY_CLIENT_PROMISE");
+    public static final AttributeKey NETTY_CLIENT_PROMISE = AttributeKey.newInstance("NETTY_CLIENT_PROMISE");
 
     // 构造方法私有
     private NettyClient(NettyClientConfig config){
@@ -26,8 +29,8 @@ public class NettyClient {
         this.init();
     }
 
+    private int count = 0;
     private NettyClientConfig config;
-    private Bootstrap bootstrap;
     private Channel channel;
 
     public NettyClientConfig getConfig() {
@@ -38,40 +41,38 @@ public class NettyClient {
         return channel;
     }
 
-    private void init() {
+    void increment(){
+        count ++;
+    }
+    int getCount(){
+        return this.count;
+    }
+
+    void init() {
 
         if(this.config == null){
             throw new SystemException("netty client config is null...");
         }
 
-        this.bootstrap = new Bootstrap();
-        this.bootstrap.group(WORKER_GROUP)
+        Bootstrap bootstrap = new Bootstrap();
+        bootstrap.group(WORKER_GROUP)
                     .channel(NioSocketChannel.class)
                     .option(ChannelOption.SO_KEEPALIVE, true)
+                    .option(ChannelOption.TCP_NODELAY, true)
                     .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 3000)
-//                    .remoteAddress(new InetSocketAddress(config.getHost(), config.getPort()))
+                    .remoteAddress(new InetSocketAddress(config.getHost(), config.getPort()))
                     .handler(new ChannelInitializer() {
             @Override
             protected void initChannel(Channel ch) throws Exception {
                 ChannelPipeline pipeline = ch.pipeline();
-                if(config.getHandlers()!=null && config.getHandlers().length>0){
-                    pipeline.addLast(config.getHandlers());
+                if(config.getHandlerFactory()!=null){
+                    pipeline.addLast(config.getHandlerFactory().handlers());
                 }
             }
         });
 
-        this.reconnect();
-    }
-
-
-    void reconnect(){
-        if(this.bootstrap == null || this.config == null){
-            return;
-        }
-
         ChannelFuture future =
-                this.bootstrap.connect(this.config.getHost(), this.config.getPort());
-
+                bootstrap.connect(this.config.getHost(), this.config.getPort());
         // channel
         this.channel = future.channel();
     }
@@ -82,13 +83,13 @@ public class NettyClient {
     /**
      * 获取NettyClient
      * @param url
-     * @param handlers
+     * @param handlerFactory
      * @return
      */
-    public static NettyClient getNettyClient(final String url, final ChannelHandler...handlers){
+    public static NettyClient getNettyClient(final String url, final ChannelHandlerFactory handlerFactory){
 
         // 获取连接池
-        NettyClientPool pool = NettyClientPool.getPool(url, handlers);
+        NettyClientPool pool = NettyClientPool.getPool(url, handlerFactory);
 
         Exception error = null;
         NettyClient client = null;
@@ -101,6 +102,11 @@ public class NettyClient {
         if(client == null) {
             throw new SystemException("client get failed...", error);
         }
+
+        client.increment();
+        System.out.println("client :" + client);
+        System.out.println("client used count:" + client.getCount());
+
         return client;
     }
 
@@ -108,11 +114,11 @@ public class NettyClient {
     /**
      * 返回NettyClient实例
      * @param url
-     * @param handlers
+     * @param handlerFactory
      * @return
      */
-    static NettyClient newInstance(final String url, final ChannelHandler...handlers) {
-        return new NettyClient(new NettyClientConfig(url, handlers));
+    static NettyClient newInstance(final String url, final ChannelHandlerFactory handlerFactory) {
+        return new NettyClient(new NettyClientConfig(url, handlerFactory));
     }
 
 
@@ -132,18 +138,6 @@ public class NettyClient {
     public final static String HTTP_VERSION_KEY = "HTTP_VERSION_KEY";
     public final static String HTTP_METHOD_KEY = "HTTP_METHOD_KEY";
 
-
-    private static ChannelHandler[] httpHandlers(){
-        ChannelHandler[] handlers = new ChannelHandler[]{
-                new HttpClientCodec(), // 编解码器
-                new HttpObjectAggregator(1024 * 10 * 1024), // 聚合
-                new HttpContentDecompressor(), // 解压
-                new ChunkedWriteHandler(), // 大数据
-//        new IdleStateHandler(2,2,2, TimeUnit.SECONDS), // 心跳
-                new NettyClientHttpObjHandler(), // 自定义处理类
-        };
-        return handlers;
-    }
 
     public static String doHttpGet(String url){
         Model header = new Model();
@@ -175,16 +169,18 @@ public class NettyClient {
         return doHttpRequest(url, null, header, message);
     }
 
-    public static String doHttpRequest(String url, ChannelHandler[] handlers, Model header, String message){
-        if(handlers == null){
-            handlers = httpHandlers();
+    public static String doHttpRequest(String url,
+                   ChannelHandlerFactory handlerFactory, Model header, String message){
+        if(handlerFactory == null){
+            handlerFactory = new DefaultHttpChannelHandlerFactory();
         }
-        NettyClient client = getNettyClient(url, handlers);
+        NettyClient client = getNettyClient(url, handlerFactory);
         if(client == null){
             throw new SystemException("netty client init failed...");
         }
         if(!client.getChannel().isOpen()){
-            client.reconnect();
+            System.out.println(Thread.currentThread().getName() + ": reconnect....");
+            client.init();
         }
 
         if(header == null){
@@ -226,7 +222,7 @@ public class NettyClient {
             client.channel.pipeline().channel().attr(NETTY_CLIENT_PROMISE).set(response);
 
             // 发送请求
-            client.channel.writeAndFlush(req);
+            client.channel.writeAndFlush(req).addListener(future -> System.out.println("send complete"));
 
             // 阻塞获取请求结果
             result = response.get();
@@ -243,33 +239,26 @@ public class NettyClient {
 
     // for rpc =============================================================================
 
-    private static ChannelHandler[] rpcHandlers(){
-        ChannelHandler[] handlers = new ChannelHandler[]{
-//            new IdleStateHandler(2,2,2, TimeUnit.SECONDS), // 心跳
-                new NettyClientByteBufHandler()
-        };
-        return handlers;
-    }
-
     public static byte[] doRpcRequest(String url, byte[] message) {
         return doRpcRequest(url, null, message);
     }
 
-    public static byte[] doRpcRequest(String url, ChannelHandler[] handlers, byte[] message){
-        if(handlers == null){
-            handlers = new ChannelHandler[]{
-//            new IdleStateHandler(2,2,2, TimeUnit.SECONDS), // 心跳
-                    new NettyClientByteBufHandler()
-            };
+    public static byte[] doRpcRequest(String url, ChannelHandlerFactory factory, byte[] message){
+        if(factory == null){
+            factory = new DefaultRpcChannelHandlerFactory();
         }
-        NettyClient client = getNettyClient(url, handlers);
+        NettyClient client = getNettyClient(url, factory);
         if(client == null){
             throw new SystemException("netty client init failed...");
         }
 
+
+        if(!client.getChannel().isActive() || !client.getChannel().isOpen()){
+            client.getChannel().remoteAddress();
+        }
+
         byte[] result;
         try {
-
             // 设置响应
             NettyResponse<byte[]> response = new NettyResponse();
             client.channel.pipeline().channel().attr(NETTY_CLIENT_PROMISE).set(response);

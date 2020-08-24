@@ -9,6 +9,8 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
+import java.util.Arrays;
+
 @ChannelHandler.Sharable
 public class MyServerHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
@@ -18,6 +20,7 @@ public class MyServerHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
         byte[] protobuf = new byte[o.readableBytes()];
         o.readBytes(protobuf);
+        System.out.println(Arrays.toString(protobuf));
         MethodParams methodParams = SerializerUtils.deserializer(protobuf, MethodParams.class);
         System.out.println(methodParams);
 
@@ -27,12 +30,15 @@ public class MyServerHandler extends SimpleChannelInboundHandler<ByteBuf> {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        ctx.close();
+        ctx.channel().close();
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         cause.printStackTrace();
-//        ctx.writeAndFlush(cause);
         ctx.close();
+        ctx.channel().close();
     }
+
 }

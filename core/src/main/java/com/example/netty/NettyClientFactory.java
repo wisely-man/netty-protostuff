@@ -32,9 +32,5 @@ public class NettyClientFactory extends BasePooledObjectFactory<NettyClient> {
 
     @Override
     public void activateObject(PooledObject<NettyClient> p) {
-        NettyClient client = p.getObject();
-        if(!client.getChannel().isActive() || !client.getChannel().isOpen()){
-            client.reconnect();
-        }
     }
 }
