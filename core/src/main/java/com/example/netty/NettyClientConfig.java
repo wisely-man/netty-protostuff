@@ -76,9 +76,7 @@ public class NettyClientConfig {
     @Override
     public int hashCode() {
         final int prime = 31;
-        int factoryHash = this.handlerFactory==null ? 0 : this.handlerFactory.hashCode();
-        return (this.getHost() + ":" + this.getPort()).hashCode() * prime
-                + factoryHash;
+        return (this.getHost() + ":" + this.getPort()).hashCode();
     }
 
 }

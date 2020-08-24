@@ -266,13 +266,14 @@ public class NettyClient {
 
         byte[] result;
         try {
+            // 设置发送数据
+            ByteBuf byteBuf = Unpooled.copiedBuffer(message);
+            client.channel.attr(NETTY_CLIENT_REQUEST).set(byteBuf);
+
+
             // 设置响应
             NettyResponse<byte[]> response = new NettyResponse();
             client.channel.attr(NETTY_CLIENT_PROMISE).set(response);
-
-            // 发送数据
-            ByteBuf byteBuf = Unpooled.copiedBuffer(message);
-            client.channel.writeAndFlush(byteBuf);
 
             // 阻塞获取异步结果
             result = response.get();

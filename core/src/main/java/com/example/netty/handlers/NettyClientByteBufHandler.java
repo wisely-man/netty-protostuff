@@ -33,9 +33,6 @@ public class NettyClientByteBufHandler extends SimpleChannelInboundHandler<ByteB
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
-
-        System.out.println("rpc channel read");
-
         nettyResponse = (NettyResponse<byte[]>) ctx.channel().attr(NettyClient.NETTY_CLIENT_PROMISE).get();
         byte[] protobuf = new byte[msg.readableBytes()];
         msg.readBytes(protobuf);
@@ -49,8 +46,6 @@ public class NettyClientByteBufHandler extends SimpleChannelInboundHandler<ByteB
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         cause.printStackTrace();
         this.nettyResponse.setError(cause);
-        ctx.close();
-        ctx.channel().close();
     }
 
     @Override

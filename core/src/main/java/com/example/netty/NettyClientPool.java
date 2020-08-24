@@ -43,7 +43,7 @@ public class NettyClientPool extends GenericObjectPool<NettyClient> {
             // 未初始化
             NettyClientFactory factory = new NettyClientFactory(config);
             pool = new NettyClientPool(factory);
-            CacheHelper.set(CACHE_KEY+config.hashCode(), pool, ACTIVE_TIME);
+            CacheHelper.set(CACHE_KEY + config.hashCode(), pool, ACTIVE_TIME);
             return pool;
         }
     }
@@ -83,7 +83,7 @@ public class NettyClientPool extends GenericObjectPool<NettyClient> {
             // 最小空闲数, 池中只有一个空闲对象的时候，池会在创建一个对象，并借出一个对象，从而保证池中最小空闲数为1
             setMinIdle(1);
             // 最大池对象总数
-            setMaxTotal(20);
+            setMaxTotal(2);
             // 逐出连接的最小空闲时间 默认1800000毫秒(30分钟)
             setMinEvictableIdleTimeMillis(1800000);
             // 逐出扫描的时间间隔(毫秒) 如果为负数,则不运行逐出线程, 默认-1
