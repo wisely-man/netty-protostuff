@@ -16,7 +16,7 @@ import io.netty.util.AsciiString;
 import io.netty.util.AttributeKey;
 
 import java.io.UnsupportedEncodingException;
-import java.net.InetSocketAddress;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class NettyClient {
 
@@ -30,7 +30,7 @@ public class NettyClient {
         this.init();
     }
 
-    private int count = 0;
+    private AtomicInteger count = new AtomicInteger(0);
     private Bootstrap bootstrap;
     private NettyClientConfig config;
     private Channel channel;
@@ -44,10 +44,10 @@ public class NettyClient {
     }
 
     void increment(){
-        count ++;
+        count.getAndIncrement();
     }
     int getCount(){
-        return this.count;
+        return this.count.get();
     }
 
     void init() {
@@ -71,6 +71,8 @@ public class NettyClient {
                 }
             }
         });
+
+        this.connect();
     }
 
     void connect(){
@@ -188,8 +190,10 @@ public class NettyClient {
             throw new SystemException("netty client init failed...");
         }
 
-        System.out.println(Thread.currentThread().getName() + ": connect....");
-        client.connect();
+        if(!client.channel.isActive()){
+            client.connect();
+        }
+
 
         if(header == null){
             header = new Model();
@@ -257,12 +261,11 @@ public class NettyClient {
         if(client == null){
             throw new SystemException("netty client init failed...");
         }
+
+        if(!client.channel.isActive()){
         client.connect();
-
-
-        if(!client.getChannel().isActive() || !client.getChannel().isOpen()){
-            client.getChannel().remoteAddress();
         }
+
 
         byte[] result;
         try {
