@@ -21,6 +21,7 @@ import java.net.InetSocketAddress;
 public class NettyClient {
 
     final static EventLoopGroup WORKER_GROUP = new NioEventLoopGroup(1);
+    public static final AttributeKey NETTY_CLIENT_REQUEST = AttributeKey.newInstance("NETTY_CLIENT_REQUEST");
     public static final AttributeKey NETTY_CLIENT_PROMISE = AttributeKey.newInstance("NETTY_CLIENT_PROMISE");
 
     // 构造方法私有
@@ -30,6 +31,7 @@ public class NettyClient {
     }
 
     private int count = 0;
+    private Bootstrap bootstrap;
     private NettyClientConfig config;
     private Channel channel;
 
@@ -54,13 +56,12 @@ public class NettyClient {
             throw new SystemException("netty client config is null...");
         }
 
-        Bootstrap bootstrap = new Bootstrap();
-        bootstrap.group(WORKER_GROUP)
+        this.bootstrap = new Bootstrap();
+        this.bootstrap.group(WORKER_GROUP)
                     .channel(NioSocketChannel.class)
                     .option(ChannelOption.SO_KEEPALIVE, true)
                     .option(ChannelOption.TCP_NODELAY, true)
                     .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 3000)
-                    .remoteAddress(new InetSocketAddress(config.getHost(), config.getPort()))
                     .handler(new ChannelInitializer() {
             @Override
             protected void initChannel(Channel ch) throws Exception {
@@ -70,9 +71,17 @@ public class NettyClient {
                 }
             }
         });
+    }
 
+    void connect(){
+
+        if(this.channel != null){
+            this.channel.close();
+        }
+
+        // connect
         ChannelFuture future =
-                bootstrap.connect(this.config.getHost(), this.config.getPort());
+                this.bootstrap.connect(this.config.getHost(), this.config.getPort());
         // channel
         this.channel = future.channel();
     }
@@ -178,10 +187,9 @@ public class NettyClient {
         if(client == null){
             throw new SystemException("netty client init failed...");
         }
-        if(!client.getChannel().isOpen()){
-            System.out.println(Thread.currentThread().getName() + ": reconnect....");
-            client.init();
-        }
+
+        System.out.println(Thread.currentThread().getName() + ": connect....");
+        client.connect();
 
         if(header == null){
             header = new Model();
@@ -219,10 +227,8 @@ public class NettyClient {
         try {
             // 设置promise
             NettyResponse<String> response = new NettyResponse();
-            client.channel.pipeline().channel().attr(NETTY_CLIENT_PROMISE).set(response);
-
-            // 发送请求
-            client.channel.writeAndFlush(req).addListener(future -> System.out.println("send complete"));
+            client.channel.attr(NETTY_CLIENT_REQUEST).set(req);
+            client.channel.attr(NETTY_CLIENT_PROMISE).set(response);
 
             // 阻塞获取请求结果
             result = response.get();
@@ -251,6 +257,7 @@ public class NettyClient {
         if(client == null){
             throw new SystemException("netty client init failed...");
         }
+        client.connect();
 
 
         if(!client.getChannel().isActive() || !client.getChannel().isOpen()){
@@ -261,7 +268,7 @@ public class NettyClient {
         try {
             // 设置响应
             NettyResponse<byte[]> response = new NettyResponse();
-            client.channel.pipeline().channel().attr(NETTY_CLIENT_PROMISE).set(response);
+            client.channel.attr(NETTY_CLIENT_PROMISE).set(response);
 
             // 发送数据
             ByteBuf byteBuf = Unpooled.copiedBuffer(message);

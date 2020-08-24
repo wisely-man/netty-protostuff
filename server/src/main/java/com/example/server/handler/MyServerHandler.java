@@ -30,15 +30,12 @@ public class MyServerHandler extends SimpleChannelInboundHandler<ByteBuf> {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        ctx.close();
-        ctx.channel().close();
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         cause.printStackTrace();
-        ctx.close();
-        ctx.channel().close();
+        ctx.writeAndFlush(cause);
     }
 
 }

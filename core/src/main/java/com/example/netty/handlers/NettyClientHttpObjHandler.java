@@ -3,6 +3,7 @@ package com.example.netty.handlers;
 import com.example.netty.NettyClient;
 import com.example.netty.NettyResponse;
 import com.wisely.core.exception.SystemException;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -18,11 +19,23 @@ public class NettyClientHttpObjHandler extends SimpleChannelInboundHandler<HttpO
 
     private StringBuffer result = new StringBuffer();
 
+    private DefaultFullHttpRequest req;
     private NettyResponse<String> nettyResponse;
+
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        this.req = (DefaultFullHttpRequest) ctx.channel().attr(NettyClient.NETTY_CLIENT_REQUEST).get();
+        if(this.req == null){
+            throw new SystemException("DefaultFullHttpRequest not bind...");
+        }
+
+        ctx.writeAndFlush(this.req);
+    }
+
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, HttpObject msg) throws Exception {
-        System.out.println("message received");
 
         this.nettyResponse = (NettyResponse<String>) ctx.channel().attr(NettyClient.NETTY_CLIENT_PROMISE).get();
 
@@ -67,7 +80,6 @@ public class NettyClientHttpObjHandler extends SimpleChannelInboundHandler<HttpO
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        System.out.println("exceptionCaught");
         cause.printStackTrace();
         this.nettyResponse.setError(cause);
         ctx.close();
